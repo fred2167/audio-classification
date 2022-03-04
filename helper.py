@@ -1,4 +1,5 @@
 import torch
+import torchaudio
 import os
 import glob
 
@@ -14,10 +15,56 @@ def getPaths(folder_path):
   speech_paths = sorted(glob.glob(os.path.join(folder_path, "speech/*")), key=_getPathkey)
   return music_paths, speech_paths
 
+def pathsToTensors(paths, normalize=True):
+
+  out = []
+  for path in paths:
+    waveform,_ = torchaudio.load(path, normalize=normalize)
+    out.append(waveform[:,:60000].squeeze())
+  
+  return torch.stack(out)
+
+def getEncoderDecoder():
+    class Decoder(torch.nn.Module):
+        def __init__(self, labels, ignore):
+            super().__init__()
+            self.labels = labels
+            self.ignore = ignore
+
+        def forward(self, emission: torch.Tensor) -> str:
+            """Given a sequence emission over labels, get the best path string
+            Args:
+            emission (Tensor): Logit tensors. Shape `[num_seq, num_label]`.
+
+            Returns:
+            str: The resulting transcript
+            """
+            indices = torch.argmax(emission, dim=-1)  # [num_seq,]
+            indices = torch.unique_consecutive(indices, dim=-1)
+            indices = [i for i in indices if i not in self.ignore]
+            return ''.join([self.labels[i] for i in indices])
+
+    bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
+    encoder = bundle.get_model()
+    decoder = Decoder(bundle.get_labels(), ignore=(0, 1, 2, 3)) 
+    return encoder, decoder
+
 def getFeatures(folder_path):
     music_feature_path = os.path.join(folder_path, "music_feat.pt")
     speech_feature_path = os.path.join(folder_path, "speech_feat.pt")
-    return torch.load(music_feature_path), torch.load(speech_feature_path)
+    if os.path.exists(music_feature_path) and os.path.exists(speech_feature_path):
+        return torch.load(music_feature_path), torch.load(speech_feature_path)
+    
+    music_paths, speech_paths = getPaths(folder_path)
+    music_tensors = pathsToTensors(music_paths)
+    speech_tensors = pathsToTensors(speech_paths)
+
+    encoder, _ = getEncoderDecoder()
+    with torch.inference_mode():
+        music_features, _ = encoder(music_tensors)
+        speech_features, _ = encoder(speech_tensors)
+    
+    return music_features, speech_features
 
 def getDataset(folder_path, num_train_examples = 15):
     torch.seed(1234)

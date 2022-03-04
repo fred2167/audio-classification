@@ -16,7 +16,7 @@ def logistic_regression(X, Y):
 def main():
     folder_path = os.path.join(os.getcwd(), "audio")
     music_paths, speech_paths = helper.getPaths(folder_path)
-    plot.displayInfo(music_paths[1])
+    plot.displayInfo(speech_paths[1])
 
 if __name__ == "__main__":
     main()
