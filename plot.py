@@ -56,8 +56,8 @@ def plot_spectrogram(spec, title=None, ylabel='freq_bin', aspect='auto', xmax=No
 
 def play_audio(path):
     st.audio(path)
-    
-def desplayInfo(path):
+
+def displayInfo(path):
   waveform, sample_rate = torchaudio.load(path)
   plot_waveform(waveform, sample_rate)
   plot_specgram(waveform, sample_rate)
