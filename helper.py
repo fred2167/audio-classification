@@ -3,6 +3,7 @@ import torch
 import torchaudio
 import os
 import glob
+from sklearn.linear_model import LogisticRegression
 
 def _getPathkey(path):
   tokens = path.split("/")
@@ -72,7 +73,6 @@ def getFeatures(folder_path):
 
 @st.cache
 def getDataset(folder_path, num_train_examples = 15):
-    torch.manual_seed(1234)
 
     music_feature, speech_feature = getFeatures(folder_path)
     music_labels = torch.zeros((num_train_examples, 1))
@@ -80,20 +80,32 @@ def getDataset(folder_path, num_train_examples = 15):
     idxToLabel = ["Music", "Speech"]
 
     x_train = torch.concat((music_feature[:num_train_examples,:], speech_feature[:num_train_examples,:]))
-    y_train = torch.concat((music_labels, speech_labels))
-
-    idx = torch.randperm(num_train_examples) 
-    x_train = x_train[idx, :]
-    y_train = y_train[idx].squeeze()
+    y_train = torch.concat((music_labels, speech_labels)).squeeze()
 
     num_test_examples = music_feature.shape[0] + speech_feature.shape[0] - 2*num_train_examples
     x_test = torch.concat((music_feature[num_train_examples:, :], speech_feature[num_train_examples:, :])) 
     y_test = torch.concat((music_labels[:num_test_examples], speech_labels[:num_test_examples]))
 
-    data = {"x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test, "idxToLabel": idxToLabel}
+
+    data = {"x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test, "idxToLabel": idxToLabel, \
+            "music_feature": music_feature, "speech_feature": speech_feature}
     return data
 
 
 
+@st.cache
+def get_data_predictor_decoder(folder_path):
+    data = getDataset(folder_path)
 
+    X, Y = data["x_train"], data["y_train"]
+
+    model = LogisticRegression(penalty="none") 
+    if len(X.shape) > 2:
+        X = X.reshape(X.shape[0], -1)
+    if len(Y.shape) > 2:
+        Y = Y.reshape(Y.shape[0], -1)
+    model.fit(X, Y)
+
+    _, decoder = getEncoderDecoder()
+    return data, model, decoder 
 
