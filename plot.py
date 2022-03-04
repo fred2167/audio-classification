@@ -3,7 +3,10 @@ import torchaudio
 import matplotlib.pyplot as plt
 import librosa
 import streamlit as st
+import seaborn as sns
+import helper
 
+# sns.set(font_scale=2)
 plt.rcParams['figure.figsize'] = [16.0, 4.8]
 
 def plot_waveform(waveform, sample_rate, title="Waveform", xlim=None, ylim=None):
@@ -58,6 +61,16 @@ def plot_spectrogram(spec, title=None, ylabel='freq_bin', aspect='auto', xmax=No
 
 def play_audio(path):
     st.audio(path)
+
+def plot_confusion_matrix(data, model):
+    confusion_matrix = helper.getConfusionMatrix(data, model)
+    fig = plt.Figure(figsize= (10, 10))
+    ax = fig.add_subplot()
+    kw = {"ax": ax, "annot": True, "cbar": False, "annot_kws": {"fontsize":30}, "cmap":"GnBu"}
+    sns.heatmap(confusion_matrix, **kw)
+    ax.set_xticklabels(data["idxToLabel"], fontsize=30)
+    ax.set_yticklabels(data["idxToLabel"], fontsize=30)
+    st.sidebar.pyplot(fig)
 
 def displayInfo(path):
   waveform, sample_rate = torchaudio.load(path)

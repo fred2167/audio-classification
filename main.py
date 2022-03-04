@@ -25,7 +25,7 @@ def ml_prediction(data, model, audio_str, idx):
     else:
         query_feat = data["speech_feature"][idx]
 
-    pred = model.predict(query_feat.clone().view(1, -1))
+    pred = model.predict(query_feat.reshape(1, -1))
     pred = pred.astype(int).item()
     return data["idxToLabel"][pred], query_feat
 
@@ -49,10 +49,13 @@ def main():
 
     st.sidebar.write("ML Prediction: ", pred_str)
 
+    plot.plot_confusion_matrix(data, predictor) 
+
     if audio_str == "Speech":
         transcript = ml_transcript(decoder, query_feature)
         st.write("ML Transcript: ", transcript)
 
+   
 
 if __name__ == "__main__":
     main()

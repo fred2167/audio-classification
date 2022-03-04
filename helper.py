@@ -4,6 +4,7 @@ import torchaudio
 import os
 import glob
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix
 
 def _getPathkey(path):
   tokens = path.split("/")
@@ -77,10 +78,9 @@ def getDataset(folder_path, num_train_examples = 15):
     x_train = torch.concat((music_feature[:num_train_examples,:], speech_feature[:num_train_examples,:]))
     y_train = torch.concat((music_labels, speech_labels)).squeeze()
 
-    num_test_examples = music_feature.shape[0] + speech_feature.shape[0] - 2*num_train_examples
+    num_test_examples = music_feature.shape[0] - num_train_examples
     x_test = torch.concat((music_feature[num_train_examples:, :], speech_feature[num_train_examples:, :])) 
-    y_test = torch.concat((music_labels[:num_test_examples], speech_labels[:num_test_examples]))
-
+    y_test = torch.concat((music_labels[:num_test_examples], speech_labels[:num_test_examples])).squeeze()
 
     data = {"x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test, "idxToLabel": idxToLabel, \
             "music_feature": music_feature, "speech_feature": speech_feature}
@@ -104,3 +104,12 @@ def get_data_predictor_decoder(folder_path):
     _, decoder = getEncoderDecoder()
     return data, model, decoder 
 
+@st.cache
+def getConfusionMatrix(data, model):
+
+    X = torch.concat((data["x_train"], data["x_test"]))
+    Y = torch.concat((data["y_train"].unsqueeze(1), data["y_test"].unsqueeze(1)))
+
+    y_pred = model.predict(X.reshape(X.shape[0], -1))
+    confu_matrix = confusion_matrix(Y, y_pred)
+    return confu_matrix 
