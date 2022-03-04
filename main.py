@@ -25,7 +25,7 @@ def ml_prediction(data, model, audio_str, idx):
     else:
         query_feat = data["speech_feature"][idx]
 
-    pred = model.predict(query_feat.view(1, -1))
+    pred = model.predict(query_feat.clone().view(1, -1))
     pred = pred.astype(int).item()
     return data["idxToLabel"][pred], query_feat
 
