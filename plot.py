@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import librosa
 import streamlit as st
 
+plt.rcParams['figure.figsize'] = [16.0, 4.8]
+
 def plot_waveform(waveform, sample_rate, title="Waveform", xlim=None, ylim=None):
   waveform = waveform.numpy()
 
