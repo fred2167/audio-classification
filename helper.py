@@ -36,13 +36,6 @@ def getEncoderDecoder():
             self.ignore = ignore
 
         def forward(self, emission: torch.Tensor) -> str:
-            """Given a sequence emission over labels, get the best path string
-            Args:
-            emission (Tensor): Logit tensors. Shape `[num_seq, num_label]`.
-
-            Returns:
-            str: The resulting transcript
-            """
             indices = torch.argmax(emission, dim=-1)  # [num_seq,]
             indices = torch.unique_consecutive(indices, dim=-1)
             indices = [i for i in indices if i not in self.ignore]
@@ -69,6 +62,8 @@ def getFeatures(folder_path):
         music_features, _ = encoder(music_tensors)
         speech_features, _ = encoder(speech_tensors)
     
+    torch.save(music_features, music_feature_path)
+    torch.save(speech_features, speech_feature_path)
     return music_features, speech_features
 
 @st.cache
