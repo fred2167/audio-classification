@@ -70,6 +70,7 @@ def plot_confusion_matrix(data, model):
     sns.heatmap(confusion_matrix, **kw)
     ax.set_xticklabels(data["idxToLabel"], fontsize=30)
     ax.set_yticklabels(data["idxToLabel"], fontsize=30)
+    st.sidebar.write("Confusion Matrix: ")
     st.sidebar.pyplot(fig)
 
 def displayInfo(path):
